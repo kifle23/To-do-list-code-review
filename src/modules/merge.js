@@ -1,3 +1,4 @@
+//crud.js
 import tasks from './list.js';
 import storage from './saveTasksToLocalStorage.js';
 import dragDrop from './dragDrop.js';
@@ -78,3 +79,99 @@ export default function addTask(taskItem, index, complete) {
   taskWrapper.appendChild(btnWrapper);
   listWrapper.appendChild(taskWrapper);
 }
+//main.js
+import Tasks from './list.js';
+import add from './crud.js';
+import storage from './saveTasksToLocalStorage.js';
+
+const addInput = document.querySelector('.add-item input');
+const returnBtn = document.querySelector('.return-i');
+const createTaskInput = document.querySelector('#create-task');
+const clearAll = document.getElementById('clearCompleted');
+
+if (localStorage.tasks) {
+  const storedTasks = JSON.parse(localStorage.tasks);
+  storedTasks.forEach((item) => {
+    Tasks.taskList.push(new Tasks(item.task, item.index, item.isCompleted));
+    add(item.task, item.index, item.isCompleted);
+  });
+}
+
+const updateTaskArray = (task) => {
+  Tasks.taskList.push(new Tasks(task, Tasks.taskList.length + 1, false));
+};
+
+returnBtn.addEventListener('click', () => {
+  add(addInput.value, Tasks.taskList.length + 1, false);
+  updateTaskArray(addInput.value);
+  storage();
+  addInput.value = '';
+});
+
+createTaskInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    add(addInput.value, Tasks.taskList.length + 1, false);
+    updateTaskArray(addInput.value);
+    storage();
+    addInput.value = '';
+  }
+});
+clearAll.addEventListener('click', (e) => {
+  e.preventDefault();
+  const allTasks = document.querySelectorAll('.list-item');
+  allTasks.forEach((item) => {
+    if (item.classList.value.includes('completed')) {
+      item.remove();
+      Tasks.deleteCompleted();
+    }
+  });
+  storage();
+  const listItems = document.querySelectorAll('.list-item');
+  listItems.forEach((listItem, index) => {
+    listItem.setAttribute('id', index + 1);
+  });
+});
+//list.js
+class List {
+    constructor(task, index, complete) {
+      this.task = task;
+      this.index = index;
+      this.isCompleted = complete;
+    }
+  
+    static taskList = [];
+  
+    toggleCompleted() {
+      this.isCompleted = !this.isCompleted;
+    }
+  
+    updateTask(text) {
+      this.task = text;
+    }
+  
+    static reindex() {
+      List.taskList.forEach((task, i) => {
+        task.index = i + 1;
+      });
+    }
+  
+    static deleteTask(i) {
+      List.taskList = List.taskList.filter((each) => each.index !== i);
+      List.reindex();
+    }
+  
+    static deleteCompleted() {
+      List.taskList = List.taskList.filter((each) => !each.isCompleted);
+      List.reindex();
+    }
+  }
+  
+  export default List;
+//saveTasksToLocalStorage
+import List from './list.js';
+
+const saveTasksToLocalStorage = () => {
+  localStorage.setItem('tasks', JSON.stringify(List.taskList));
+};
+
+export default saveTasksToLocalStorage;
